@@ -1,0 +1,31 @@
+{
+  "name": "john-bot",
+  "version": "0.0.2",
+  "description": "Slack Bot Entry",
+  "main": "robot.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node robot.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/john-stennett-volusion/john-bot.git"
+  },
+  "keywords": [
+    "bot",
+    "slack",
+    "slackbot"
+  ],
+  "author": "John S",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/john-stennett-volusion/john-bot/issues"
+  },
+  "homepage": "https://github.com/john-stennett-volusion/john-bot#readme",
+  "dependencies": {
+    "botkit": "^0.1.1",
+    "chance": "^1.0.2",
+    "request": "^2.71.0",
+    "xmldom": "^0.1.22"
+  }
+}
