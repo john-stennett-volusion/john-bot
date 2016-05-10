@@ -6,6 +6,7 @@ WORKDIR /usr/src/app
 
 # Install BotKit.
 RUN npm install botkit --save
+RUN npm install
 COPY robot.js /usr/src/app/
 COPY package.json /usr/src/app
 
