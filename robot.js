@@ -176,6 +176,8 @@ controller.hears('help', messageTypes, (bot, message) => {
 		helpMessage += `xkcd random         - Returns a random XKCD comic.\n`;
 		helpMessage += `ron                 - Returns a random Ron Swanson quote.\n`;
 		// helpMessage += `yoda TEXT           - Returns your TEXT in Yoda Speak.\n`;
+		helpMessage += `cat bomb            - Returns a random number of Cat images.\n`;
+		helpMessage += `cat bomb NUM_OF_IMG - Returns the number of Cat images you request.\n`;
 		helpMessage += `obfuscate           - Returns "Hello World" in Unicode Characters.\n`;
 		helpMessage += `obfuscate TEXT      - Returns your text in Unicode Characters.\n`;
 		helpMessage += `quotes              - Returns a random quote.\n`;
@@ -492,8 +494,12 @@ controller.hears(['oatmeal', 'the oatmeal'], messageTypes, (bot, message) => {
 			}
 		}
 
-		for (let comicImage of comicImages) {
-			bot.reply(message, comicImage);
+		if (comicImages.length > 0) {
+			for (let comicImage of comicImages) {
+				bot.reply(message, comicImage);
+			}
+		} else {
+			bot.reply(message, 'There appears to be an issue, please try again.')
 		}
 	});
 
@@ -657,5 +663,50 @@ controller.hears(['ron', 'ron swanson', 'swanson'], messageTypes, (bot, message)
 		let data = body.replace('[','').replace(']', '');
 		let replyMessage = `*${data}* \n\t\t - Ron Swanson -`;
 		bot.reply(message, replyMessage);
+	});
+});
+
+controller.hears(['cat bomb'], messageTypes, (bot, message) => {
+	let catMessage = message.text.toLowerCase().replace('cat bomb', '');
+	let catCommand = catMessage.slice(1, catMessage.length);
+	let chance = new Chance();
+	let numberOfCats = chance.integer({ min: 1, max: 5 });
+	let imageType = 'jpg';
+
+	if (catMessage.indexOf('gif') > -1) {
+		imageType = 'gif';
+		catCommand = catCommand.replace('gif', '');
+	} else if (catMessage.indexOf('png') > -1) {
+		imageType = 'png';
+		catCommand = catCommand.replace('png', '');
+	} else {
+		imageType = 'jpg';
+		catCommand = catCommand.replace('jpg', '');
+	}
+
+	if (catMessage.length > 0) {
+		numberOfCats = catCommand.replace(' ', '');
+	}
+
+	request.get({
+		url: `http://thecatapi.com/api/images/get?format=html&results_per_page=${numberOfCats}`
+	}, (err, httpResponse, body) => {
+		let data = body;
+		let parse = new DOMParser();
+		let xmlDoc = parse.parseFromString(data, 'text/html');
+		let imageList = xmlDoc.getElementsByTagName('img');
+		let imageSrcs = [];
+
+		if (imageList.length > 0) {
+			for (let i=0; i < imageList.length; i++) {
+				imageSrcs.push(imageList[i].getAttribute('src'));
+			}
+
+			for (let i=0; i < imageSrcs.length; i++) {
+				bot.reply(message, imageSrcs[i]);
+			}
+		} else {
+			bot.reply(message, 'There appears to be an issue, please try again.');
+		}
 	});
 });
