@@ -501,8 +501,8 @@ controller.hears(['oatmeal', 'the oatmeal'], messageTypes, (bot, message) => {
 
 controller.hears(['meme'], messageTypes, (bot, message) => {
 
-	let userName = 'voljohns';
-	let password = 'z4zNdtrCwZqAkfut8aD^9?Bud';
+	const userName = 'voljohns';
+	const password = 'z4zNdtrCwZqAkfut8aD^9?Bud';
 
 	function processAPIResults(list) {
 		let generators = [];
@@ -512,8 +512,10 @@ controller.hears(['meme'], messageTypes, (bot, message) => {
 			let generator = {
 				id: list[i].generatorID,
 				name: list[i].displayName,
-				image: list[i].imageUrl
+				image: list[i].imageUrl,
+				imageID: list[i].imageUrl.replace('https://cdn.meme.am/images/400x/', '').replace('.jpg', '')
 			};
+
 			generators.push(generator);
 			generatorList += `  + ${i+1} - *${generator.name}* - ${generator.image}\n`;
 		}
@@ -522,7 +524,7 @@ controller.hears(['meme'], messageTypes, (bot, message) => {
 	}
 
 	function buildGeneratorList(reply) {
-		request.get({
+		return request.get({
 			url: 'http://version1.api.memegenerator.net/Generators_Select_ByPopular?pageIndex=0&pageSize=12&days=7'
 		}, (err, httpResponse, body) => {
 			let memeBody = JSON.parse(body);
@@ -539,38 +541,53 @@ controller.hears(['meme'], messageTypes, (bot, message) => {
 			if (reply) {
 				bot.reply(message, apiResults[1]);
 			}
+
+			return apiResults[0];
 		});
 	}
 
 	function responseValidator(responses) {
 		let initialResponses = responses;
+		let breakOut = true;
 
 		let supportedLang = ['en', 'es', 'he', 'ru', '--'];
 
 		for (let i=0; i < supportedLang.length; i++) {
-			if (supportedLang[i] !== initialResponses.memeLang) {
-				initialResponses.memeLang = 'en';
+			if (supportedLang[i] == initialResponses.memeLang) {
+				breakOut = false;
+				break;
 			}
 		}
 
-		if (typeof initialResponses.memeType !== 'number' || Number(initialResponses.memeType) > 12) {
+		if (breakOut) {
+			initialResponses.memeLang = 'en';
+		}
+
+		if (Number(initialResponses.memeType) >= 12) {
 			initialResponses.memeType = '11';
 		}
 
-		console.log(initialResponses);
 		return initialResponses;
 	}
 
-	function retrieveMeme(responses) {
+	function retrieveMeme(responses, list) {
 		let validatedResponses = responseValidator(responses);
+		let imageList = JSON.parse(list.req.res.body).result;
+		let imageID, generatorID;
+
+		for (let i=0; i < imageList.length; i++) {
+			if (i == validatedResponses.memeType) {
+				generatorID = imageList[i].generatorID;
+				imageID = imageList[i].imageUrl.replace('https://cdn.meme.am/images/400x/', '').replace('.jpg', '');
+				break;
+			}
+		}
 
 		request.get({
-			url: `http://version1.api.memegenerator.net/Instance_Create?username=${userName}&password=${password}&languageCode=${validatedResponses.memeLang}&generatorID=45&imageID=20&text0=${validatedResponses.topText}&text1=${validatedResponses.bottomText}`
+			url: `http://version1.api.memegenerator.net/Instance_Create?username=${userName}&password=${password}&languageCode=${validatedResponses.memeLang}&generatorID=${generatorID}&imageID=${imageID}&text0=${validatedResponses.topText}&text1=${validatedResponses.bottomText}`
 		}, (err, httpResponse, body) => {
 			let memeBody = JSON.parse(body);
 			let memeUrl;
-
-			console.log(memeBody);
 
 			if (memeBody.success) {
 				memeUrl = memeBody.result.instanceImageUrl;
@@ -585,12 +602,14 @@ controller.hears(['meme'], messageTypes, (bot, message) => {
 
 	bot.startConversation(message, (err, convo) => {
 		if (!err) {
+			let list = [];
+
 			convo.say(`*Let's build a MEME together!*\n`);
 			convo.ask(`*What language would you like the MEME to be in?* \n
 			*en*  - English; *es*  - Spanish; *he*  - Hebrew; *ru*  - Russian; *--*  - Other`, (response, convo) => {
 
 				bot.reply(message, `*Which of these MEMEs would you like to use?*\n`);
-				buildGeneratorList(true);
+				list = buildGeneratorList(true);
 				convo.next();
 			}, {
 				'key': 'memeLang'
@@ -610,7 +629,8 @@ controller.hears(['meme'], messageTypes, (bot, message) => {
 
 			convo.ask(`*What text would you like to appear on BOTTOM of the MEME?*`, (response, convo) => {
 				let values = convo.extractResponses();
-				retrieveMeme(values);
+
+				retrieveMeme(values, list);
 				convo.next();
 			}, {
 				'key': 'bottomText'
