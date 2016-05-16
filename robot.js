@@ -497,6 +497,16 @@ controller.hears(['oatmeal', 'the oatmeal'], messageTypes, (bot, message) => {
 		}
 	});
 
+	bot.api.reactions.add({
+		timestamp: message.ts,
+		channel: message.channel,
+		name: 'smiling_imp'
+	}, function(err, res) {
+		if (err) {
+			bot.botkit.log('Failed to add emoji reaction :(', err);
+		}
+	});
+
 });
 
 controller.hears(['meme'], messageTypes, (bot, message) => {
