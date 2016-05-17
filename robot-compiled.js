@@ -316,7 +316,7 @@ controller.hears('xkcd', messageTypes, (bot, message) => {
 				icon_emoji: ':computer:'
 			});
 			bot.reply(message, {
-				text: `${ image } *${ alt }*`,
+				text: `${ image }\n*${ alt }*`,
 				username: 'XKCD Bot',
 				icon_emoji: ':computer:'
 			});
@@ -805,10 +805,10 @@ controller.hears('test', messageTypes, (bot, message) => {
 });
 
 controller.hears('bingo', messageTypes, (bot, message) => {
+	sendEmoji(bot, message, 'game_die');
+
 	function numberGenerator() {
 		let cards = [];
-
-		sendEmoji(bot, message, 'game_die');
 
 		let bNumberList = ['01', '02', '03', '04', '05', '06', '07', '08', '09', 10, 11, 12, 13, 14, 15];
 		let iNumberList = [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30];
