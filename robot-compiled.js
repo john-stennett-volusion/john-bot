@@ -195,7 +195,11 @@ controller.hears('help', messageTypes, (bot, message) => {
 
 	// helpMessage += `yoda TEXT           - Returns your TEXT in Yoda Speak.\n`;
 
-	bot.reply(message, helpMessage);
+	bot.reply(message, {
+		text: helpMessage,
+		username: 'Help Bot',
+		icon_emoji: ':help:'
+	});
 });
 
 controller.hears('weather', messageTypes, (bot, message) => {
@@ -205,7 +209,11 @@ controller.hears('weather', messageTypes, (bot, message) => {
 	sendEmoji(bot, message, 'cloud');
 
 	if (weatherMessage == undefined || weatherMessage == '' || weatherMessage == ' ') {
-		bot.reply(message, 'You need to supply the CITY, STATE in order to retrieve the weather.');
+		bot.reply(message, {
+			text: 'You need to supply the CITY, STATE in order to retrieve the weather.',
+			username: 'Weather Bot',
+			icon_emoji: ':cloud:'
+		});
 	} else {
 		let city = weatherMessage[0].trim().replace(' ', '_');
 		let state = weatherMessage[1].trim();
@@ -230,7 +238,11 @@ controller.hears('weather', messageTypes, (bot, message) => {
 					let weatherConditions = `*Conditions*: ${ weatherDays[i].conditions }`;
 					let weatherMessage = `${ weatherDay } - ${ weatherHigh } - ${ weatherLow } - ${ weatherConditions }`;
 
-					bot.reply(message, weatherMessage);
+					bot.reply(message, {
+						text: weatherMessage,
+						username: 'Weather Bot',
+						icon_emoji: ':cloud:'
+					});
 				}
 			});
 		});
@@ -242,7 +254,12 @@ controller.hears('google', messageTypes, (bot, message) => {
 	googleMessage = googleMessage.slice(1, googleMessage.length).replace(/ /g, '+');
 
 	sendEmoji(bot, message, 'google');
-	bot.reply(message, `https://www.google.com/#q=${ googleMessage }`);
+
+	bot.reply(message, {
+		text: `https://www.google.com/#q=${ googleMessage }`,
+		username: 'Google Bot',
+		icon_emoji: 'google'
+	});
 });
 
 controller.hears('xkcd', messageTypes, (bot, message) => {
@@ -269,8 +286,16 @@ controller.hears('xkcd', messageTypes, (bot, message) => {
 			let alt = replyBody.alt;
 			let image = replyBody.img;
 
-			bot.reply(message, `*${ title }*`);
-			bot.reply(message, `${ image } *${ alt }*`);
+			bot.reply(message, {
+				text: `*${ title }*`,
+				username: 'XKCD Bot',
+				icon_emoji: ':computer:'
+			});
+			bot.reply(message, {
+				text: `${ image } *${ alt }*`,
+				username: 'XKCD Bot',
+				icon_emoji: ':computer:'
+			});
 		});
 	};
 
@@ -288,7 +313,11 @@ controller.hears('xkcd', messageTypes, (bot, message) => {
 		let randomUrl = `http://xkcd.com/${ randomComicNumber }/info.0.json`;
 
 		if (err) {
-			bot.reply(message, 'There appears to be an issue, please try again.');
+			bot.reply(message, {
+				text: 'There appears to be an issue, please try again.',
+				username: 'XKCD Bot',
+				icon_emoji: ':computer:'
+			});
 		} else {
 			sendMessage(randomUrl);
 		}
@@ -311,10 +340,18 @@ controller.hears('ch', messageTypes, (bot, message) => {
 			let mainImage = htmlDoc.getElementById('main-comic');
 
 			if (mainImage === null) {
-				bot.reply(message, 'There was an error retrieving your image.');
+				bot.reply(message, {
+					text: 'There was an error retrieving your image.',
+					username: 'Cyanide and Happiness Bot',
+					icon_emoji: ':happytobecake:'
+				});
 			} else {
 				let address = mainImage.getAttribute('src');
-				bot.reply(message, `http:${ address }`);
+				bot.reply(message, {
+					text: `http:${ address }`,
+					username: 'Cyanide and Happiness Bot',
+					icon_emoji: ':happytobecake:'
+				});
 			}
 		});
 	} else if (chText == 'random') {
@@ -337,10 +374,18 @@ controller.hears('ch', messageTypes, (bot, message) => {
 				let mainImage = htmlDoc.getElementById('main-comic');
 
 				if (mainImage === null) {
-					bot.reply(message, 'There was an error retrieving your image.');
+					bot.reply(message, {
+						text: 'There was an error retrieving your image.',
+						username: 'Cyanide and Happiness Bot',
+						icon_emoji: ':happytobecake:'
+					});
 				} else {
 					let address = mainImage.getAttribute('src');
-					bot.reply(message, `http:${ address }`);
+					bot.reply(message, {
+						text: `http:${ address }`,
+						username: 'Cyanide and Happiness Bot',
+						icon_emoji: ':happytobecake:'
+					});
 				}
 			});
 		});
@@ -359,29 +404,25 @@ controller.hears('yoda', messageTypes, (bot, message) => {
 		bot.reply(message, `${ result.body }`);
 	});
 
-	bot.api.reactions.add({
-		timestamp: message.ts,
-		channel: message.channel,
-		name: 'yoda'
-	}, function (err, res) {
-		if (err) {
-			bot.botkit.log('Failed to add emoji reaction :(', err);
-		}
-	});
+	sendEmoji(bot, message, 'yoda');
 });
 
 controller.hears('quotes', messageTypes, (bot, message) => {
 	let quoteMessage = message.text.replace('quotes', '');
 	let categoryTerm = quoteMessage.slice(1, quoteMessage.length);
 
-	sendEmoji(bot, message, 'smile');
+	sendEmoji(bot, message, 'grumpycat');
 
 	unirest.post(`https://andruxnet-random-famous-quotes.p.mashape.com/?cat=${ categoryTerm }`).header("X-Mashape-Key", "LtAGmt4o8qmshfSrGpgXTSQMBggIp1Rs9SejsnaZ4AzTxqwarv").header("Content-Type", "application/x-www-form-urlencoded").header("Accept", "application/json").end(function (result) {
 		let messageBody = JSON.parse(result.body);
 		let quote = messageBody.quote;
 		let author = messageBody.author;
 		let fullMessage = `*"${ quote }"*\n\t\t\t- ${ author } -`;
-		bot.reply(message, fullMessage);
+		bot.reply(message, {
+			text: fullMessage,
+			username: 'Random Quotes Bot',
+			icon_emoji: ':grumpycat:'
+		});
 	});
 });
 
@@ -416,7 +457,11 @@ controller.hears('status', messageTypes, (bot, message) => {
 	unirest.get(`https://community-http-status-cats.p.mashape.com/${ statusCode }.jpg`).header("X-Mashape-Key", "LtAGmt4o8qmshfSrGpgXTSQMBggIp1Rs9SejsnaZ4AzTxqwarv").end(function (result) {
 		let mainBody = JSON.stringify(result.request);
 		let parsedBody = JSON.parse(mainBody);
-		bot.reply(message, parsedBody.uri.href);
+		bot.reply(message, {
+			text: parsedBody.uri.href,
+			username: 'Status Cat Bot',
+			icon_emoji: ':cat:'
+		});
 	});
 });
 
@@ -431,7 +476,11 @@ controller.hears('obfuscate', messageTypes, (bot, message) => {
 	}
 
 	unirest.get(`https://bheithaus-unicode-obfuscator.p.mashape.com/obfuscate?level=3&word=${ obfuscateWord }`).header('X-Mashape-Key', 'N6HhNVEoI1mshNub4YZLeKW1GDx0p1La1nojsnxney54j9lAo2').header('Accept', 'application/json').end(result => {
-		bot.reply(message, result.body.obfuscation);
+		bot.reply(message, {
+			text: result.body.obfuscation,
+			username: 'Obfuscate Bot',
+			icon_emoji: ':radioactive_sign:'
+		});
 	});
 });
 
@@ -487,10 +536,18 @@ controller.hears(['oatmeal', 'the oatmeal'], messageTypes, (bot, message) => {
 
 		if (comicImages.length > 0) {
 			for (let comicImage of comicImages) {
-				bot.reply(message, comicImage);
+				bot.reply(message, {
+					text: comicImage,
+					username: 'The Oatmeal Bot',
+					icon_emoji: ':smiling_imp:'
+				});
 			}
 		} else {
-			bot.reply(message, 'There appears to be an issue, please try again.');
+			bot.reply(message, {
+				text: 'There appears to be an issue, please try again.',
+				username: 'The Oatmeal Bot',
+				icon_emoji: ':smiling_imp:'
+			});
 		}
 	});
 });
@@ -588,11 +645,19 @@ controller.hears(['meme'], messageTypes, (bot, message) => {
 
 			if (memeBody.success) {
 				memeUrl = memeBody.result.instanceImageUrl;
-				bot.reply(message, memeUrl);
+				bot.reply(message, {
+					text: memeUrl,
+					username: 'Meme Bot',
+					icon_emoji: ':dandd:'
+				});
 			} else {
 				console.log('These was an issue retrieving the MEME from the API. Using cached image instead.');
 				memeUrl = memeGeneratorImage.result.instanceImageUrl;
-				bot.reply(message, memeUrl);
+				bot.reply(message, {
+					text: memeUrl,
+					username: 'Meme Bot',
+					icon_emoji: ':dandd:'
+				});
 			}
 		});
 	}
@@ -644,7 +709,11 @@ controller.hears(['ron', 'ron swanson', 'swanson'], messageTypes, (bot, message)
 	}, (err, httpResponse, body) => {
 		let data = body.replace('[', '').replace(']', '');
 		let replyMessage = `*${ data }* \n\t\t - Ron Swanson -`;
-		bot.reply(message, replyMessage);
+		bot.reply(message, {
+			text: replyMessage,
+			username: 'Ron Swanson',
+			icon_emoji: ':realdeadpool:'
+		});
 	});
 });
 
@@ -687,19 +756,27 @@ controller.hears(['cat bomb'], messageTypes, (bot, message) => {
 			}
 
 			for (let i = 0; i < imageSrcs.length; i++) {
-				bot.reply(message, imageSrcs[i]);
+				bot.reply(message, {
+					text: imageSrcs[i],
+					username: 'Cat Bot',
+					icon_emoji: ':cat2:'
+				});
 			}
 		} else {
-			bot.reply(message, 'There appears to be an issue, please try again.');
+			bot.reply(message, {
+				text: 'There appears to be an issue, please try again.',
+				username: 'Cat Bot',
+				icon_emoji: ':cat2:'
+			});
 		}
 	});
 });
 
 controller.hears('test', messageTypes, (bot, message) => {
 	bot.reply(message, {
-		text: "/msg @margaret_petersen tests",
-		username: "margaret_petersen",
-		icon_emoji: ":dash:"
+		text: '/msg @margaret_petersen tests',
+		username: 'margaret_petersen',
+		icon_emoji: ':dash:'
 	});
 });
 
