@@ -192,6 +192,7 @@ controller.hears('help', messageTypes, (bot, message) => {
 	let helpMessage = '';
 	helpMessage += `\`\`\`hello               - Returns "Hello yourself".\n`;
 	helpMessage += `help                - Returns a list of available commands.\n`;
+	helpMessage += `material api        - Returns the Health of Material's Prod/Dev APIs.\n`;
 	helpMessage += `weather CITY, STATE - Include CITY, STATE & you'll get the weather.\n`;
 	helpMessage += `google SEARCH_TERM  - Include a SEARCH_TERM & you'll get a link to Google.\n`;
 	helpMessage += `status              - Returns a "404 - Not Found" Cat Image.\n`;
@@ -1015,4 +1016,46 @@ controller.hears(['uptime'], messageTypes, (bot, message) => {
 	let upTime = formatUptime(process.uptime());
 
 	bot.reply(message, `I am <@${bot.identity.name}>. I have been running for ${upTime} on ${hostname}.`);
+});
+
+controller.hears(['material api'], messageTypes, (bot, message) => {
+	request.get({
+		url: 'https://api.material.com/store/health'
+	}, (err, httpResponse, body) => {
+		let materialStatus = JSON.parse(body);
+
+		if (materialStatus.isHealthy == true) {
+			bot.reply(message, {
+				text: `:heavy_check_mark: Material's *_Production API_* is up and running!!`,
+				username: 'Material API Bot',
+				icon_emoji: ':material:'
+			});
+		} else {
+			bot.reply(message, {
+				text: `:fire: Oh no! Material's *_Production API_* is down currently!!`,
+				username: 'Material API Bot',
+				icon_emoji: ':material:'
+			});
+		}
+	});
+
+	request.get({
+		url: 'https://dev.api.material.com/store/health'
+	}, (err, httpResponse, body) => {
+		let materialStatus = JSON.parse(body);
+
+		if (materialStatus.isHealthy == true) {
+			bot.reply(message, {
+				text: `:heavy_check_mark: Material's *_Development API_* is up and running!!`,
+				username: 'Material API Bot',
+				icon_emoji: ':material:'
+			});
+		} else {
+			bot.reply(message, {
+				text: `:fire: Oh no! Material's *_Development API_* is down currently!!`,
+				username: 'Material API Bot',
+				icon_emoji: ':material:'
+			});
+		}
+	});
 });
