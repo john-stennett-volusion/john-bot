@@ -6,6 +6,7 @@ let http = require('http');
 let request = require('request');
 let Chance = require('chance');
 let unirest = require('unirest');
+let os = require('os');
 
 let chance = new Chance();
 const weatherToken = 'bfbb9867aa3f80a7';
@@ -168,6 +169,24 @@ function sendEmoji(bot, message, emoji) {
 	});
 }
 
+function formatUptime(uptime) {
+	var unit = 'second';
+	if (uptime > 60) {
+		uptime = uptime / 60;
+		unit = 'minute';
+	}
+	if (uptime > 60) {
+		uptime = uptime / 60;
+		unit = 'hour';
+	}
+	if (uptime != 1) {
+		unit = unit + 's';
+	}
+
+	uptime = uptime + ' ' + unit;
+	return uptime;
+}
+
 // Give the bot something to listen for.
 controller.hears('help', messageTypes, (bot, message) => {
 	let helpMessage = '';
@@ -190,6 +209,11 @@ controller.hears('help', messageTypes, (bot, message) => {
 	helpMessage += `obfuscate           - Returns "Hello World" in Unicode Characters.\n`;
 	helpMessage += `obfuscate TEXT      - Returns your text in Unicode Characters.\n`;
 	helpMessage += `bingo               - Returns a random BINGO card.\n`;
+	helpMessage += `number              - Returns a random Number Fact for a random Number.\n`;
+	helpMessage += `number random       - Returns a random Number Fact for a random Number.\n`;
+	helpMessage += `number NUMBER       - Returns a random Number Fact for the Number.\n`;
+	helpMessage += `date MM/DD          - Returns a random Fact for the specified Date.\n`;
+	helpMessage += `uptime              - Returns the current Up Time for John-Bot.\n`;
 	helpMessage += `quotes              - Returns a random quote.\n`;
 	helpMessage += `quotes CATEGORY     - Returns a random quote from a specific category.\`\`\``;
 
@@ -867,6 +891,106 @@ controller.hears('bingo', messageTypes, (bot, message) => {
 	}
 
 	cardGenerator(numberGenerator());
+});
+
+controller.hears('number', messageTypes, (bot, message) => {
+	let numberMessage = message.text.replace('number', '');
+	numberMessage = numberMessage.slice(1, numberMessage.length);
+
+	sendEmoji(bot, message, 'science');
+
+	if (numberMessage == '' || numberMessage == ' ' || numberMessage == 'random') {
+		unirest.get(`https://numbersapi.p.mashape.com/random/trivia?fragment=true&json=true&max=20000&min=0`).header('X-Mashape-Key', 'N6HhNVEoI1mshNub4YZLeKW1GDx0p1La1nojsnxney54j9lAo2').header('Accept', 'text/plain').end(function (result) {
+			let numberResults = result.body;
+			let numberFact = numberResults.text;
+			numberFact = numberFact.charAt(0).toUpperCase() + numberFact.slice(1);
+
+			if (numberResults.found) {
+				bot.reply(message, {
+					text: `*Number*: _${ numberResults.number }_ \n *Fact*: "${ numberFact }."`,
+					username: 'Random Math Facts Bot',
+					icon_emoji: ':science:'
+				});
+			}
+		});
+	} else if (numberMessage > 0) {
+		unirest.get(`https://numbersapi.p.mashape.com/${ numberMessage }/math?fragment=true&json=true`).header('X-Mashape-Key', 'N6HhNVEoI1mshNub4YZLeKW1GDx0p1La1nojsnxney54j9lAo2').header('Accept', 'text/plain').end(function (result) {
+			let mathResults = result.body;
+			let numberFact = mathResults.text;
+
+			if (numberFact !== undefined) {
+				numberFact = numberFact.charAt(0).toUpperCase() + numberFact.slice(1);
+
+				if (mathResults.found) {
+					bot.reply(message, {
+						text: `*Number*: _${ mathResults.number }_ \n *Fact*: "${ numberFact }."`,
+						username: 'Random Number Facts Bot',
+						icon_emoji: ':science:'
+					});
+				}
+			} else {
+				bot.reply(message, {
+					text: `There appears to be an issue, please try again.`,
+					username: 'Random Number Facts Bot',
+					icon_emoji: ':science:'
+				});
+			}
+		});
+	} else {
+		bot.reply(message, {
+			text: `There appears to be an issue, please try again.`,
+			username: 'Random Number Facts Bot',
+			icon_emoji: ':science:'
+		});
+	}
+});
+
+controller.hears(['date'], messageTypes, (bot, message) => {
+	let dateMessage = message.text.replace('date', '');
+	dateMessage = dateMessage.slice(1, dateMessage.length).split('/');
+
+	sendEmoji(bot, message, 'science');
+
+	if (dateMessage.length == 2 && dateMessage[0] != '' && dateMessage[1] != '') {
+		let MM = dateMessage[0];
+		let DD = dateMessage[1];
+
+		unirest.get(`https://numbersapi.p.mashape.com/${ MM }/${ DD }/date?fragment=true&json=true`).header('X-Mashape-Key', 'N6HhNVEoI1mshNub4YZLeKW1GDx0p1La1nojsnxney54j9lAo2').header('Accept', 'text/plain').end(function (result) {
+			let dateResults = result.body;
+			let dateFact = dateResults.text;
+
+			if (dateFact !== undefined) {
+				dateFact = dateFact.charAt(0).toUpperCase() + dateFact.slice(1);
+
+				if (dateResults.found) {
+					bot.reply(message, {
+						text: `*Date*: _${ MM }/${ DD }, ${ dateResults.year }_ \n *Fact*: "${ dateFact }."`,
+						username: 'Random Date Facts Bot',
+						icon_emoji: ':science:'
+					});
+				}
+			} else {
+				bot.reply(message, {
+					text: `There appears to be an issue, please try again.`,
+					username: 'Random Date Facts Bot',
+					icon_emoji: ':science:'
+				});
+			}
+		});
+	} else {
+		bot.reply(message, {
+			text: `You need to supply the MM/DD in order to retrieve a Random Date Fact.`,
+			username: 'Random Date Facts Bot',
+			icon_emoji: ':science:'
+		});
+	}
+});
+
+controller.hears(['uptime'], messageTypes, (bot, message) => {
+	let hostname = os.hostname();
+	let upTime = formatUptime(process.uptime());
+
+	bot.reply(message, `I am <@${ bot.identity.name }>. I have been running for ${ upTime } on ${ hostname }.`);
 });
 
 //# sourceMappingURL=robot-compiled.js.map
