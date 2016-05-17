@@ -1019,6 +1019,8 @@ controller.hears(['uptime'], messageTypes, (bot, message) => {
 });
 
 controller.hears(['material api'], messageTypes, (bot, message) => {
+	sendEmoji(bot, message, 'material');
+
 	request.get({
 		url: 'https://api.material.com/store/health'
 	}, (err, httpResponse, body) => {
