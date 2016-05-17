@@ -193,6 +193,7 @@ controller.hears('help', messageTypes, (bot, message) => {
 	helpMessage += `\`\`\`hello               - Returns "Hello yourself".\n`;
 	helpMessage += `help                - Returns a list of available commands.\n`;
 	helpMessage += `material api        - Returns the Health of Material's Prod/Dev APIs.\n`;
+	helpMessage += `material feed       - Returns the RSS Feed for Material's Prod/Dev APIs.\n`;
 	helpMessage += `weather CITY, STATE - Include CITY, STATE & you'll get the weather.\n`;
 	helpMessage += `google SEARCH_TERM  - Include a SEARCH_TERM & you'll get a link to Google.\n`;
 	helpMessage += `status              - Returns a "404 - Not Found" Cat Image.\n`;
@@ -1033,6 +1034,32 @@ controller.hears(['material api'], messageTypes, (bot, message) => {
 				text: `:fire: Oh no! Material's *_Development API_* is down currently!!`,
 				username: 'Material API Bot',
 				icon_emoji: ':material:'
+			});
+		}
+	});
+});
+
+controller.hears(['material feed'], messageTypes, (bot, message) => {
+	let feed = require('feed-read');
+
+	sendEmoji(bot, message, 'material');
+
+	feed('http://material.statuspage.io/history.atom', (err, articles) => {
+		if (err) throw err;
+
+		for (let i = 0; i < articles.length; i++) {
+			let articleTitle = articles[i].title;
+			let articleAuthor = articles[i].author;
+			let articleLink = articles[i].link;
+			let articlePublished = articles[i].published;
+			let articleMessage = `*${ articleAuthor } - ${ articlePublished }*\n`;
+			articleMessage += `\t "<${ articleLink }|${ articleTitle }>"\n`;
+
+			bot.reply(message, {
+				text: articleMessage,
+				username: 'Material Feed Bot',
+				icon_emoji: ':material:',
+				unfurl_links: false
 			});
 		}
 	});
