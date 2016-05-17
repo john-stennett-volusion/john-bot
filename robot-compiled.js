@@ -8,10 +8,10 @@ let Chance = require('chance');
 let unirest = require('unirest');
 
 let chance = new Chance();
-let weatherToken = 'bfbb9867aa3f80a7';
+const weatherToken = 'bfbb9867aa3f80a7';
 let slackToken;
 
-let messageTypes = ['direct_message', 'direct_mention', 'mention'];
+const messageTypes = ['direct_message', 'direct_mention', 'mention'];
 let memeGeneratorList = {
 	"success": true,
 	"result": [{
@@ -155,80 +155,94 @@ bot.startRTM(err => {
 	}
 });
 
+// Helpful Functions.
+function sendEmoji(bot, message, emoji) {
+	bot.api.reactions.add({
+		timestamp: message.ts,
+		channel: message.channel,
+		name: `${ emoji }`
+	}, function (err, res) {
+		if (err) {
+			bot.botkit.log('Failed to add emoji reaction :(', err);
+		}
+	});
+}
+
 // Give the bot something to listen for.
 controller.hears('help', messageTypes, (bot, message) => {
-	let slackMessage = message.text.toLowerCase();
+	let helpMessage = '';
+	helpMessage += `\`\`\`hello               - Returns "Hello yourself".\n`;
+	helpMessage += `help                - Returns a list of available commands.\n`;
+	helpMessage += `weather CITY, STATE - Include CITY, STATE & you'll get the weather.\n`;
+	helpMessage += `google SEARCH_TERM  - Include a SEARCH_TERM & you'll get a link to Google.\n`;
+	helpMessage += `status              - Returns a "404 - Not Found" Cat Image.\n`;
+	helpMessage += `status HTTP_STATUS  - Returns a Cat Image for the HTTP Status Code.\n`;
+	helpMessage += `status random       - Returns a random Cat Image of a HTTP Status Code.\n`;
+	helpMessage += `ch                  - Returns the most recent Cyanide and Happiness comic.\n`;
+	helpMessage += `ch random           - Returns a random Cyanide and Happiness comic.\n`;
+	helpMessage += `oatmeal             - Returns a random Oatmeal comic strip.\n`;
+	helpMessage += `xkcd                - Returns the most recent XKCD comic.\n`;
+	helpMessage += `xkcd COMIC_NUMBER   - Returns the specified XKCD comic #.\n`;
+	helpMessage += `xkcd random         - Returns a random XKCD comic.\n`;
+	helpMessage += `ron                 - Returns a random Ron Swanson quote.\n`;
+	helpMessage += `cat bomb            - Returns a random number of Cat images.\n`;
+	helpMessage += `cat bomb NUM_OF_IMG - Returns the number of Cat images you request.\n`;
+	helpMessage += `obfuscate           - Returns "Hello World" in Unicode Characters.\n`;
+	helpMessage += `obfuscate TEXT      - Returns your text in Unicode Characters.\n`;
+	helpMessage += `bingo               - Returns a random BINGO card.\n`;
+	helpMessage += `quotes              - Returns a random quote.\n`;
+	helpMessage += `quotes CATEGORY     - Returns a random quote from a specific category.\`\`\``;
 
-	if (slackMessage == 'help') {
-		let helpMessage = '';
-		helpMessage += `\`\`\`hello               - Returns "Hello yourself".\n`;
-		helpMessage += `help                - Returns a list of available commands.\n`;
-		helpMessage += `weather CITY, STATE - Include CITY, STATE & you'll get the weather.\n`;
-		helpMessage += `google SEARCH_TERM  - Include a SEARCH_TERM & you'll get a link to Google.\n`;
-		helpMessage += `status              - Returns a "404 - Not Found" Cat Image.\n`;
-		helpMessage += `status HTTP_STATUS  - Returns a Cat Image for the HTTP Status Code.\n`;
-		helpMessage += `status random       - Returns a random Cat Image of a HTTP Status Code.\n`;
-		helpMessage += `ch                  - Returns the most recent Cyanide and Happiness comic.\n`;
-		helpMessage += `ch random           - Returns a random Cyanide and Happiness comic.\n`;
-		helpMessage += `oatmeal             - Returns a random Oatmeal comic strip.\n`;
-		helpMessage += `xkcd                - Returns the most recent XKCD comic.\n`;
-		helpMessage += `xkcd COMIC_NUMBER   - Returns the specified XKCD comic #.\n`;
-		helpMessage += `xkcd random         - Returns a random XKCD comic.\n`;
-		helpMessage += `ron                 - Returns a random Ron Swanson quote.\n`;
-		// helpMessage += `yoda TEXT           - Returns your TEXT in Yoda Speak.\n`;
-		helpMessage += `cat bomb            - Returns a random number of Cat images.\n`;
-		helpMessage += `cat bomb NUM_OF_IMG - Returns the number of Cat images you request.\n`;
-		helpMessage += `obfuscate           - Returns "Hello World" in Unicode Characters.\n`;
-		helpMessage += `obfuscate TEXT      - Returns your text in Unicode Characters.\n`;
-		helpMessage += `quotes              - Returns a random quote.\n`;
-		helpMessage += `quotes CATEGORY     - Returns a random quote from a specific category.\`\`\``;
+	// helpMessage += `yoda TEXT           - Returns your TEXT in Yoda Speak.\n`;
 
-		bot.reply(message, helpMessage);
-	}
+	bot.reply(message, helpMessage);
 });
 
 controller.hears('weather', messageTypes, (bot, message) => {
 	let weatherMessage = message.text.toLowerCase();
 	weatherMessage = weatherMessage.replace('weather', '').split(',');
 
-	let city = weatherMessage[0].trim().replace(' ', '_');
-	let state = weatherMessage[1].trim();
+	sendEmoji(bot, message, 'cloud');
 
-	let weatherUri = `/api/${ weatherToken }/forecast/q/${ state }/${ city }.json`;
+	if (weatherMessage == undefined || weatherMessage == '' || weatherMessage == ' ') {
+		bot.reply(message, 'You need to supply the CITY, STATE in order to retrieve the weather.');
+	} else {
+		let city = weatherMessage[0].trim().replace(' ', '_');
+		let state = weatherMessage[1].trim();
 
-	http.get({
-		host: 'api.wunderground.com',
-		path: weatherUri
-	}, response => {
-		let weatherBody = '';
+		http.get({
+			host: 'api.wunderground.com',
+			path: `/api/${ weatherToken }/forecast/q/${ state }/${ city }.json`
+		}, response => {
+			let weatherBody = '';
 
-		response.on('data', d => {
-			weatherBody += d;
+			response.on('data', d => {
+				weatherBody += d;
+			});
+			response.on('end', () => {
+				let weatherData = JSON.parse(weatherBody);
+				let weatherDays = weatherData.forecast.simpleforecast.forecastday;
+
+				for (let i = 0; i < weatherDays.length; i++) {
+					let weatherDay = `*${ weatherDays[i].date.weekday }*`;
+					let weatherHigh = `*High*: ${ weatherDays[i].high.fahrenheit }`;
+					let weatherLow = `*Low*: ${ weatherDays[i].low.fahrenheit }`;
+					let weatherConditions = `*Conditions*: ${ weatherDays[i].conditions }`;
+					let weatherMessage = `${ weatherDay } - ${ weatherHigh } - ${ weatherLow } - ${ weatherConditions }`;
+
+					bot.reply(message, weatherMessage);
+				}
+			});
 		});
-		response.on('end', () => {
-			let weatherData = JSON.parse(weatherBody);
-			let weatherDays = weatherData.forecast.simpleforecast.forecastday;
-
-			for (let i = 0; i < weatherDays.length; i++) {
-				let weatherDay = `*${ weatherDays[i].date.weekday }*`;
-				let weatherHigh = `*High*: ${ weatherDays[i].high.fahrenheit }`;
-				let weatherLow = `*Low*: ${ weatherDays[i].low.fahrenheit }`;
-				let weatherConditions = `*Conditions*: ${ weatherDays[i].conditions }`;
-				let weatherMessage = `${ weatherDay } - ${ weatherHigh } - ${ weatherLow } - ${ weatherConditions }`;
-
-				bot.reply(message, weatherMessage);
-			}
-		});
-	});
+	}
 });
 
 controller.hears('google', messageTypes, (bot, message) => {
 	let googleMessage = message.text.toLowerCase().replace('google', '');
 	googleMessage = googleMessage.slice(1, googleMessage.length).replace(/ /g, '+');
 
-	let googleUrl = `https://www.google.com/#q=${ googleMessage }`;
-
-	bot.reply(message, googleUrl);
+	sendEmoji(bot, message, 'google');
+	bot.reply(message, `https://www.google.com/#q=${ googleMessage }`);
 });
 
 controller.hears('xkcd', messageTypes, (bot, message) => {
@@ -236,8 +250,9 @@ controller.hears('xkcd', messageTypes, (bot, message) => {
 	xkcdMessage = xkcdMessage.slice(1, xkcdMessage.length);
 	let comicUrl;
 
-	let sendMessage = url => {
+	sendEmoji(bot, message, 'computer');
 
+	let sendMessage = url => {
 		if (xkcdMessage.length == 0) {
 			comicUrl = 'http://xkcd.com/info.0.json';
 		} else if (typeof xkcdMessage == "number") {
@@ -272,7 +287,11 @@ controller.hears('xkcd', messageTypes, (bot, message) => {
 
 		let randomUrl = `http://xkcd.com/${ randomComicNumber }/info.0.json`;
 
-		sendMessage(randomUrl);
+		if (err) {
+			bot.reply(message, 'There appears to be an issue, please try again.');
+		} else {
+			sendMessage(randomUrl);
+		}
 	});
 });
 
@@ -280,7 +299,7 @@ controller.hears('ch', messageTypes, (bot, message) => {
 	let chMessage = message.text.toLowerCase().replace('ch', '');
 	let chText = chMessage.slice(1, chMessage.length);
 
-	console.log(chMessage);
+	sendEmoji(bot, message, 'happytobecake');
 
 	if (chMessage.length == 0) {
 		request.get({
@@ -307,10 +326,7 @@ controller.hears('ch', messageTypes, (bot, message) => {
 			let htmlDoc = parse.parseFromString(data, 'text/html');
 			let currentIssue = htmlDoc.getElementById('permalink');
 			let currentIssueValue = currentIssue.getAttribute('value').replace('http://explosm.net/comics/', '').replace('/', '');
-			console.log(currentIssueValue);
-
 			let randomComic = chance.integer({ min: 1, max: currentIssueValue });
-			console.log(randomComic);
 
 			request.get({
 				url: `http://explosm.net/comics/${ randomComic }/`
@@ -358,22 +374,14 @@ controller.hears('quotes', messageTypes, (bot, message) => {
 	let quoteMessage = message.text.replace('quotes', '');
 	let categoryTerm = quoteMessage.slice(1, quoteMessage.length);
 
+	sendEmoji(bot, message, 'smile');
+
 	unirest.post(`https://andruxnet-random-famous-quotes.p.mashape.com/?cat=${ categoryTerm }`).header("X-Mashape-Key", "LtAGmt4o8qmshfSrGpgXTSQMBggIp1Rs9SejsnaZ4AzTxqwarv").header("Content-Type", "application/x-www-form-urlencoded").header("Accept", "application/json").end(function (result) {
 		let messageBody = JSON.parse(result.body);
 		let quote = messageBody.quote;
 		let author = messageBody.author;
-		let fullMessage = `*"${ quote }*\n\t\t\t- ${ author } -`;
+		let fullMessage = `*"${ quote }"*\n\t\t\t- ${ author } -`;
 		bot.reply(message, fullMessage);
-	});
-
-	bot.api.reactions.add({
-		timestamp: message.ts,
-		channel: message.channel,
-		name: 'smile'
-	}, function (err, res) {
-		if (err) {
-			bot.botkit.log('Failed to add emoji reaction :(', err);
-		}
 	});
 });
 
@@ -383,6 +391,8 @@ controller.hears('status', messageTypes, (bot, message) => {
 	let validHTTPCodes = [100, 101, 200, 201, 202, 204, 206, 207, 300, 301, 303, 304, 305, 307, 400, 401, 402, 403, 404, 405, 406, 408, 409, 410, 411, 413, 414, 416, 417, 418, 422, 423, 424, 425, 426, 429, 431, 444, 450, 500, 502, 503, 506, 507, 508, 509, 599];
 	let randomHTTPCode = chance.pick(validHTTPCodes);
 	let doesItMatch;
+
+	sendEmoji(bot, message, 'cat');
 
 	if (statusCode == '' || statusCode == ' ') {
 		statusCode = '404';
@@ -414,6 +424,8 @@ controller.hears('obfuscate', messageTypes, (bot, message) => {
 	let obfuscateMessage = message.text.replace('obfuscate', '');
 	let obfuscateWord = obfuscateMessage.slice(1, obfuscateMessage.length);
 
+	sendEmoji(bot, message, 'radioactive_sign');
+
 	if (obfuscateWord == '' || obfuscateWord == ' ') {
 		obfuscateWord = 'Hello World';
 	}
@@ -424,14 +436,7 @@ controller.hears('obfuscate', messageTypes, (bot, message) => {
 });
 
 controller.hears(['hi', 'hello', 'howdy'], messageTypes, (bot, message) => {
-
-	bot.api.reactions.add({
-		timestamp: message.ts,
-		channel: message.channel,
-		name: 'robot_face'
-	}, (err, res) => {
-		if (err) bot.botkit.log('Failed to add emoji reaction :(', err);
-	});
+	sendEmoji(bot, message, 'robot_face');
 
 	controller.storage.users.get(message.user, (err, user) => {
 		if (user && user.name) {
@@ -443,8 +448,8 @@ controller.hears(['hi', 'hello', 'howdy'], messageTypes, (bot, message) => {
 });
 
 controller.hears(['call me (.*)', 'my name is (.*)'], messageTypes, (bot, message) => {
-
 	var name = message.match[1];
+
 	controller.storage.users.get(message.user, (err, user) => {
 		if (!user) {
 			user = {
@@ -460,6 +465,7 @@ controller.hears(['call me (.*)', 'my name is (.*)'], messageTypes, (bot, messag
 });
 
 controller.hears(['oatmeal', 'the oatmeal'], messageTypes, (bot, message) => {
+	sendEmoji(bot, message, 'smiling_imp');
 
 	request.get({
 		url: 'http://theoatmeal.com/feed/random',
@@ -487,22 +493,13 @@ controller.hears(['oatmeal', 'the oatmeal'], messageTypes, (bot, message) => {
 			bot.reply(message, 'There appears to be an issue, please try again.');
 		}
 	});
-
-	bot.api.reactions.add({
-		timestamp: message.ts,
-		channel: message.channel,
-		name: 'smiling_imp'
-	}, function (err, res) {
-		if (err) {
-			bot.botkit.log('Failed to add emoji reaction :(', err);
-		}
-	});
 });
 
 controller.hears(['meme'], messageTypes, (bot, message) => {
-
 	const userName = 'voljohns';
 	const password = 'z4zNdtrCwZqAkfut8aD^9?Bud';
+
+	sendEmoji(bot, message, 'dandd');
 
 	function processAPIResults(list) {
 		let generators = [];
@@ -640,6 +637,8 @@ controller.hears(['meme'], messageTypes, (bot, message) => {
 });
 
 controller.hears(['ron', 'ron swanson', 'swanson'], messageTypes, (bot, message) => {
+	sendEmoji(bot, message, 'realdeadpool');
+
 	request.get({
 		url: 'http://ron-swanson-quotes.herokuapp.com/v2/quotes'
 	}, (err, httpResponse, body) => {
@@ -671,6 +670,8 @@ controller.hears(['cat bomb'], messageTypes, (bot, message) => {
 		numberOfCats = catCommand.replace(' ', '');
 	}
 
+	sendEmoji(bot, message, 'cat2');
+
 	request.get({
 		url: `http://thecatapi.com/api/images/get?format=html&results_per_page=${ numberOfCats }`
 	}, (err, httpResponse, body) => {
@@ -692,6 +693,103 @@ controller.hears(['cat bomb'], messageTypes, (bot, message) => {
 			bot.reply(message, 'There appears to be an issue, please try again.');
 		}
 	});
+});
+
+controller.hears('test', messageTypes, (bot, message) => {
+	bot.reply(message, {
+		text: "/msg @margaret_petersen tests",
+		username: "margaret_petersen",
+		icon_emoji: ":dash:"
+	});
+});
+
+controller.hears('bingo', messageTypes, (bot, message) => {
+	function numberGenerator() {
+		let cards = [];
+
+		sendEmoji(bot, message, 'game_die');
+
+		let bNumberList = ['01', '02', '03', '04', '05', '06', '07', '08', '09', 10, 11, 12, 13, 14, 15];
+		let iNumberList = [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30];
+		let nNumberList = [31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45];
+		let gNumberList = [46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60];
+		let oNumberList = [61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75];
+
+		for (let k = 0; k < 5; k++) {
+			let chance = new Chance();
+			let randomNumberB = chance.pickone(bNumberList);
+			let randomNumberI = chance.pickone(iNumberList);
+			let randomNumberN = chance.pickone(nNumberList);
+			let randomNumberG = chance.pickone(gNumberList);
+			let randomNumberO = chance.pickone(oNumberList);
+
+			for (let j = 0; j < bNumberList.length; j++) {
+				if (randomNumberB == bNumberList[j]) {
+					bNumberList.splice(j, 1);
+					break;
+				}
+			}
+
+			for (let j = 0; j < iNumberList.length; j++) {
+				if (randomNumberI == iNumberList[j]) {
+					iNumberList.splice(j, 1);
+					break;
+				}
+			}
+
+			for (let j = 0; j < nNumberList.length; j++) {
+				if (randomNumberN == nNumberList[j]) {
+					nNumberList.splice(j, 1);
+					break;
+				}
+			}
+
+			for (let j = 0; j < gNumberList.length; j++) {
+				if (randomNumberG == gNumberList[j]) {
+					gNumberList.splice(j, 1);
+					break;
+				}
+			}
+
+			for (let j = 0; j < oNumberList.length; j++) {
+				if (randomNumberO == oNumberList[j]) {
+					oNumberList.splice(j, 1);
+					break;
+				}
+			}
+
+			cards.push({
+				b: randomNumberB,
+				i: randomNumberI,
+				n: randomNumberN,
+				g: randomNumberG,
+				o: randomNumberO
+			});
+		}
+
+		return cards;
+	}
+
+	function cardGenerator(cards) {
+		let cardDesign = `\`\`\`--------------------------\n| B  | I  | N  | G  | O  |\n--------------------------\n`;
+
+		for (let i = 0; i < cards.length; i++) {
+			if (cards[2].n) {
+				cards[2].n = 'XX';
+			}
+
+			cardDesign += `| ${ cards[i].b } | ${ cards[i].i } | ${ cards[i].n } | ${ cards[i].g } | ${ cards[i].o } |\n`;
+		}
+
+		cardDesign += `--------------------------\`\`\``;
+		bot.reply(message, {
+			text: cardDesign,
+			username: 'Bingo Bot',
+			icon_emoji: ':game_die:'
+		});
+	}
+
+	cardGenerator(numberGenerator());
 });
 
 //# sourceMappingURL=robot-compiled.js.map
