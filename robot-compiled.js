@@ -395,7 +395,7 @@ controller.hears(['ch'], messageTypes, (bot, message) => {
 	}
 });
 
-controller.hears(['oat test', 'the oatmeal'], messageTypes, (bot, message) => {
+controller.hears(['oatmeal', 'the oatmeal'], messageTypes, (bot, message) => {
 	sendEmoji(bot, message, 'smiling_imp');
 
 	request.get({

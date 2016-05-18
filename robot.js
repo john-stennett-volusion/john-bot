@@ -396,7 +396,7 @@ controller.hears(['ch'], messageTypes, (bot, message) => {
 	}
 });
 
-controller.hears(['oat test', 'the oatmeal'], messageTypes, (bot, message) => {
+controller.hears(['oatmeal', 'the oatmeal'], messageTypes, (bot, message) => {
 	sendEmoji(bot, message, 'smiling_imp');
 
 	request.get({
@@ -416,7 +416,7 @@ controller.hears(['oat test', 'the oatmeal'], messageTypes, (bot, message) => {
 				comicImages.push(source);
 			}
 		}
-		
+
 		if (comicImages.length > 0) {
 			for (let j=0; j < comicImages.length; j++) {
 				bot.reply(message, {
