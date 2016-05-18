@@ -13,7 +13,7 @@ const weatherToken = 'bfbb9867aa3f80a7';
 let slackToken;
 
 const messageTypes = ['direct_message', 'direct_mention', 'mention'];
-let memeGeneratorList = {
+const memeGeneratorList = {
 	"success": true,
 	"result": [{
 		"generatorID": 244535,
@@ -113,7 +113,7 @@ let memeGeneratorList = {
 		"ranking": 142
 	}]
 };
-let memeGeneratorImage = {
+const memeGeneratorImage = {
 	"success": true,
 	"result": {
 		"generatorID": 45,
@@ -183,7 +183,7 @@ function formatUptime(uptime) {
 		unit = unit + 's';
 	}
 
-	uptime = uptime + ' ' + unit;
+	uptime = uptime.toFixed(2) + ' ' + unit;
 	return uptime;
 }
 
@@ -194,11 +194,6 @@ controller.hears('help', messageTypes, (bot, message) => {
 	helpMessage += `help                - Returns a list of available commands.\n`;
 	helpMessage += `material api        - Returns the Health of Material's Prod/Dev APIs.\n`;
 	helpMessage += `material feed       - Returns the RSS Feed for Material's Prod/Dev APIs.\n`;
-	helpMessage += `weather CITY, STATE - Include CITY, STATE & you'll get the weather.\n`;
-	helpMessage += `google SEARCH_TERM  - Include a SEARCH_TERM & you'll get a link to Google.\n`;
-	helpMessage += `status              - Returns a "404 - Not Found" Cat Image.\n`;
-	helpMessage += `status HTTP_STATUS  - Returns a Cat Image for the HTTP Status Code.\n`;
-	helpMessage += `status random       - Returns a random Cat Image of a HTTP Status Code.\n`;
 	helpMessage += `ch                  - Returns the most recent Cyanide and Happiness comic.\n`;
 	helpMessage += `ch random           - Returns a random Cyanide and Happiness comic.\n`;
 	helpMessage += `oatmeal             - Returns a random Oatmeal comic strip.\n`;
@@ -206,20 +201,23 @@ controller.hears('help', messageTypes, (bot, message) => {
 	helpMessage += `xkcd COMIC_NUMBER   - Returns the specified XKCD comic #.\n`;
 	helpMessage += `xkcd random         - Returns a random XKCD comic.\n`;
 	helpMessage += `ron                 - Returns a random Ron Swanson quote.\n`;
+	helpMessage += `status              - Returns a "404 - Not Found" Cat Image.\n`;
+	helpMessage += `status HTTP_STATUS  - Returns a Cat Image for the HTTP Status Code.\n`;
+	helpMessage += `status random       - Returns a random Cat Image of a HTTP Status Code.\n`;
 	helpMessage += `cat bomb            - Returns a random number of Cat images.\n`;
 	helpMessage += `cat bomb NUM_OF_IMG - Returns the number of Cat images you request.\n`;
-	helpMessage += `obfuscate           - Returns "Hello World" in Unicode Characters.\n`;
-	helpMessage += `obfuscate TEXT      - Returns your text in Unicode Characters.\n`;
-	helpMessage += `bingo               - Returns a random BINGO card.\n`;
 	helpMessage += `number              - Returns a random Number Fact for a random Number.\n`;
 	helpMessage += `number random       - Returns a random Number Fact for a random Number.\n`;
 	helpMessage += `number NUMBER       - Returns a random Number Fact for the Number.\n`;
 	helpMessage += `date MM/DD          - Returns a random Fact for the specified Date.\n`;
-	helpMessage += `uptime              - Returns the current Up Time for John-Bot.\n`;
 	helpMessage += `quotes              - Returns a random quote.\n`;
-	helpMessage += `quotes CATEGORY     - Returns a random quote from a specific category.\`\`\``;
-
-	// helpMessage += `yoda TEXT           - Returns your TEXT in Yoda Speak.\n`;
+	helpMessage += `quotes CATEGORY     - Returns a random quote from a specific category.\n`;
+	helpMessage += `obfuscate           - Returns "Hello World" in Unicode Characters.\n`;
+	helpMessage += `obfuscate TEXT      - Returns your text in Unicode Characters.\n`;
+	helpMessage += `bingo               - Returns a random BINGO card.\n`;
+	helpMessage += `google SEARCH_TERM  - Include a SEARCH_TERM & you'll get a link to Google.\n`;
+	helpMessage += `weather CITY, STATE - Include CITY, STATE & you'll get the weather.\n`;
+	helpMessage += `uptime              - Returns the current Up Time for John-Bot.\`\`\``;
 
 	bot.reply(message, {
 		text: helpMessage,
@@ -228,129 +226,106 @@ controller.hears('help', messageTypes, (bot, message) => {
 	});
 });
 
-controller.hears('weather', messageTypes, (bot, message) => {
-	let weatherMessage = message.text.toLowerCase();
-	weatherMessage = weatherMessage.replace('weather', '').split(',');
+controller.hears(['hi', 'hello', 'howdy'], messageTypes, (bot, message) => {
+	sendEmoji(bot, message, 'robot_face');
 
-	sendEmoji(bot, message, 'cloud');
-
-	if (weatherMessage == undefined || weatherMessage == '' || weatherMessage == ' ') {
-		bot.reply(message, {
-			text: 'You need to supply the CITY, STATE in order to retrieve the weather.',
-			username: 'Weather Bot',
-			icon_emoji: ':cloud:'
-		});
-	} else {
-		let city = weatherMessage[0].trim().replace(' ', '_');
-		let state = weatherMessage[1].trim();
-
-		http.get({
-			host: 'api.wunderground.com',
-			path: `/api/${ weatherToken }/forecast/q/${ state }/${ city }.json`
-		}, response => {
-			let weatherBody = '';
-
-			response.on('data', d => {
-				weatherBody += d;
-			});
-			response.on('end', () => {
-				let weatherData = JSON.parse(weatherBody);
-				let weatherDays = weatherData.forecast.simpleforecast.forecastday;
-
-				for (let i = 0; i < weatherDays.length; i++) {
-					let weatherDay = `*${ weatherDays[i].date.weekday }*`;
-					let weatherHigh = `*High*: ${ weatherDays[i].high.fahrenheit }`;
-					let weatherLow = `*Low*: ${ weatherDays[i].low.fahrenheit }`;
-					let weatherConditions = `*Conditions*: ${ weatherDays[i].conditions }`;
-					let weatherMessage = `${ weatherDay } - ${ weatherHigh } - ${ weatherLow } - ${ weatherConditions }`;
-
-					bot.reply(message, {
-						text: weatherMessage,
-						username: 'Weather Bot',
-						icon_emoji: ':cloud:'
-					});
-				}
-			});
-		});
-	}
-});
-
-controller.hears('google', messageTypes, (bot, message) => {
-	let googleMessage = message.text.toLowerCase().replace('google', '');
-	googleMessage = googleMessage.slice(1, googleMessage.length).replace(/ /g, '+');
-
-	sendEmoji(bot, message, 'google');
-
-	bot.reply(message, {
-		text: `https://www.google.com/#q=${ googleMessage }`,
-		username: 'Google Bot',
-		icon_emoji: 'google'
+	controller.storage.users.get(message.user, (err, user) => {
+		if (user && user.name) {
+			bot.reply(message, `Hello ${ user.name }!!`);
+		} else {
+			bot.reply(message, 'Hello there!');
+		}
 	});
 });
 
-controller.hears('xkcd', messageTypes, (bot, message) => {
-	let xkcdMessage = message.text.toLowerCase().replace('xkcd', '');
-	xkcdMessage = xkcdMessage.slice(1, xkcdMessage.length);
-	let comicUrl;
+controller.hears(['call me (.*)', 'my name is (.*)'], messageTypes, (bot, message) => {
+	var name = message.match[1];
 
-	sendEmoji(bot, message, 'computer');
-
-	let sendMessage = url => {
-		if (xkcdMessage.length == 0) {
-			comicUrl = 'http://xkcd.com/info.0.json';
-		} else if (typeof xkcdMessage == "number") {
-			comicUrl = `http://xkcd.com/${ xkcdMessage }/info.0.json`;
-		} else {
-			comicUrl = url;
+	controller.storage.users.get(message.user, (err, user) => {
+		if (!user) {
+			user = {
+				id: message.user
+			};
 		}
 
-		request.post({
-			url: comicUrl
-		}, (err, httpResponse, body) => {
-			let replyBody = JSON.parse(body);
-			let title = replyBody.safe_title;
-			let alt = replyBody.alt;
-			let image = replyBody.img;
-
-			bot.reply(message, {
-				text: `*${ title }*`,
-				username: 'XKCD Bot',
-				icon_emoji: ':computer:'
-			});
-			bot.reply(message, {
-				text: `${ image }\n*${ alt }*`,
-				username: 'XKCD Bot',
-				icon_emoji: ':computer:'
-			});
+		user.name = name;
+		controller.storage.users.save(user, (err, id) => {
+			bot.reply(message, `Got it! I will call you ${ user.name } from now on!`);
 		});
-	};
+	});
+});
 
-	request.post({
-		url: 'http://xkcd.com/info.0.json'
+controller.hears(['material api'], messageTypes, (bot, message) => {
+	sendEmoji(bot, message, 'material');
+
+	request.get({
+		url: 'https://api.material.com/store/health'
 	}, (err, httpResponse, body) => {
-		let replyBody = JSON.parse(body);
-		let totalComicCount = String(replyBody.num);
+		let materialStatus = JSON.parse(body);
 
-		let randomComicNumber = chance.integer({
-			min: 1,
-			max: Number(totalComicCount)
-		});
-
-		let randomUrl = `http://xkcd.com/${ randomComicNumber }/info.0.json`;
-
-		if (err) {
+		if (materialStatus.isHealthy == true) {
 			bot.reply(message, {
-				text: 'There appears to be an issue, please try again.',
-				username: 'XKCD Bot',
-				icon_emoji: ':computer:'
+				text: `:heavy_check_mark: Material's *_Production API_* is up and running!!`,
+				username: 'Material API Bot',
+				icon_emoji: ':material:'
 			});
 		} else {
-			sendMessage(randomUrl);
+			bot.reply(message, {
+				text: `:fire: Oh no! Material's *_Production API_* is down currently!!`,
+				username: 'Material API Bot',
+				icon_emoji: ':material:'
+			});
+		}
+	});
+
+	request.get({
+		url: 'https://dev.api.material.com/store/health'
+	}, (err, httpResponse, body) => {
+		let materialStatus = JSON.parse(body);
+
+		if (materialStatus.isHealthy == true) {
+			bot.reply(message, {
+				text: `:heavy_check_mark: Material's *_Development API_* is up and running!!`,
+				username: 'Material API Bot',
+				icon_emoji: ':material:'
+			});
+		} else {
+			bot.reply(message, {
+				text: `:fire: Oh no! Material's *_Development API_* is down currently!!`,
+				username: 'Material API Bot',
+				icon_emoji: ':material:'
+			});
 		}
 	});
 });
 
-controller.hears('ch', messageTypes, (bot, message) => {
+controller.hears(['material feed'], messageTypes, (bot, message) => {
+	let feed = require('feed-read');
+
+	sendEmoji(bot, message, 'material');
+
+	feed('http://material.statuspage.io/history.atom', (err, articles) => {
+		if (err) throw err;
+
+		for (let i = 0; i < articles.length; i++) {
+			let articleTitle = articles[i].title;
+			let articleAuthor = articles[i].author;
+			let articleLink = articles[i].link;
+			let articlePublished = articles[i].published;
+			let articleMessage = `*${ articleAuthor } - ${ articlePublished }*\n`;
+			articleMessage += `\t "<${ articleLink }|${ articleTitle }>"\n`;
+
+			bot.reply(message, {
+				text: articleMessage,
+				username: 'Material Feed Bot',
+				icon_emoji: ':material:',
+				unfurl_links: false
+			});
+		}
+	});
+});
+
+controller.hears(['ch'], messageTypes, (bot, message) => {
 	let chMessage = message.text.toLowerCase().replace('ch', '');
 	let chText = chMessage.slice(1, chMessage.length);
 
@@ -418,127 +393,6 @@ controller.hears('ch', messageTypes, (bot, message) => {
 	}
 });
 
-controller.hears('yoda', messageTypes, (bot, message) => {
-	let yodaMessage = message.text.replace('yoda', '');
-	let searchTerm = yodaMessage.slice(1, yodaMessage.length).replace(/ /g, '+');
-
-	if (searchTerm == '' || searchTerm == ' ') {
-		searchTerm = '';
-	}
-
-	unirest.get(`https://yoda.p.mashape.com/yoda?sentence=${ searchTerm }.`).header("X-Mashape-Key", "LtAGmt4o8qmshfSrGpgXTSQMBggIp1Rs9SejsnaZ4AzTxqwarv").header("Accept", "text/plain").end(function (result) {
-		bot.reply(message, `${ result.body }`);
-	});
-
-	sendEmoji(bot, message, 'yoda');
-});
-
-controller.hears('quotes', messageTypes, (bot, message) => {
-	let quoteMessage = message.text.replace('quotes', '');
-	let categoryTerm = quoteMessage.slice(1, quoteMessage.length);
-
-	sendEmoji(bot, message, 'grumpycat');
-
-	unirest.post(`https://andruxnet-random-famous-quotes.p.mashape.com/?cat=${ categoryTerm }`).header("X-Mashape-Key", "LtAGmt4o8qmshfSrGpgXTSQMBggIp1Rs9SejsnaZ4AzTxqwarv").header("Content-Type", "application/x-www-form-urlencoded").header("Accept", "application/json").end(function (result) {
-		let messageBody = JSON.parse(result.body);
-		let quote = messageBody.quote;
-		let author = messageBody.author;
-		let fullMessage = `*"${ quote }"*\n\t\t\t- ${ author } -`;
-		bot.reply(message, {
-			text: fullMessage,
-			username: 'Random Quotes Bot',
-			icon_emoji: ':grumpycat:'
-		});
-	});
-});
-
-controller.hears('status', messageTypes, (bot, message) => {
-	let statusMessage = message.text.replace('status', '');
-	let statusCode = statusMessage.slice(1, statusMessage.length);
-	let validHTTPCodes = [100, 101, 200, 201, 202, 204, 206, 207, 300, 301, 303, 304, 305, 307, 400, 401, 402, 403, 404, 405, 406, 408, 409, 410, 411, 413, 414, 416, 417, 418, 422, 423, 424, 425, 426, 429, 431, 444, 450, 500, 502, 503, 506, 507, 508, 509, 599];
-	let randomHTTPCode = chance.pick(validHTTPCodes);
-	let doesItMatch;
-
-	sendEmoji(bot, message, 'cat');
-
-	if (statusCode == '' || statusCode == ' ') {
-		statusCode = '404';
-	} else if (statusCode == 'random') {
-		statusCode = randomHTTPCode;
-	} else {
-		for (let code in validHTTPCodes) {
-			if (validHTTPCodes[code] == statusCode) {
-				doesItMatch = true;
-				break;
-			} else {
-				doesItMatch = false;
-			}
-		}
-
-		if (doesItMatch == false) {
-			statusCode = '404';
-		}
-	}
-
-	unirest.get(`https://community-http-status-cats.p.mashape.com/${ statusCode }.jpg`).header("X-Mashape-Key", "LtAGmt4o8qmshfSrGpgXTSQMBggIp1Rs9SejsnaZ4AzTxqwarv").end(function (result) {
-		let mainBody = JSON.stringify(result.request);
-		let parsedBody = JSON.parse(mainBody);
-		bot.reply(message, {
-			text: parsedBody.uri.href,
-			username: 'Status Cat Bot',
-			icon_emoji: ':cat:'
-		});
-	});
-});
-
-controller.hears('obfuscate', messageTypes, (bot, message) => {
-	let obfuscateMessage = message.text.replace('obfuscate', '');
-	let obfuscateWord = obfuscateMessage.slice(1, obfuscateMessage.length);
-
-	sendEmoji(bot, message, 'radioactive_sign');
-
-	if (obfuscateWord == '' || obfuscateWord == ' ') {
-		obfuscateWord = 'Hello World';
-	}
-
-	unirest.get(`https://bheithaus-unicode-obfuscator.p.mashape.com/obfuscate?level=3&word=${ obfuscateWord }`).header('X-Mashape-Key', 'N6HhNVEoI1mshNub4YZLeKW1GDx0p1La1nojsnxney54j9lAo2').header('Accept', 'application/json').end(result => {
-		bot.reply(message, {
-			text: result.body.obfuscation,
-			username: 'Obfuscate Bot',
-			icon_emoji: ':radioactive_sign:'
-		});
-	});
-});
-
-controller.hears(['hi', 'hello', 'howdy'], messageTypes, (bot, message) => {
-	sendEmoji(bot, message, 'robot_face');
-
-	controller.storage.users.get(message.user, (err, user) => {
-		if (user && user.name) {
-			bot.reply(message, `Hello ${ user.name }!!`);
-		} else {
-			bot.reply(message, 'Hello there!');
-		}
-	});
-});
-
-controller.hears(['call me (.*)', 'my name is (.*)'], messageTypes, (bot, message) => {
-	var name = message.match[1];
-
-	controller.storage.users.get(message.user, (err, user) => {
-		if (!user) {
-			user = {
-				id: message.user
-			};
-		}
-
-		user.name = name;
-		controller.storage.users.save(user, (err, id) => {
-			bot.reply(message, `Got it! I will call you ${ user.name } from now on!`);
-		});
-	});
-});
-
 controller.hears(['oatmeal', 'the oatmeal'], messageTypes, (bot, message) => {
 	sendEmoji(bot, message, 'smiling_imp');
 
@@ -574,6 +428,68 @@ controller.hears(['oatmeal', 'the oatmeal'], messageTypes, (bot, message) => {
 				username: 'The Oatmeal Bot',
 				icon_emoji: ':smiling_imp:'
 			});
+		}
+	});
+});
+
+controller.hears(['xkcd'], messageTypes, (bot, message) => {
+	let xkcdMessage = message.text.toLowerCase().replace('xkcd', '');
+	xkcdMessage = xkcdMessage.slice(1, xkcdMessage.length);
+	let comicUrl;
+
+	sendEmoji(bot, message, 'computer');
+
+	let sendMessage = url => {
+		if (xkcdMessage.length == 0) {
+			comicUrl = 'http://xkcd.com/info.0.json';
+		} else if (typeof xkcdMessage == "number") {
+			comicUrl = `http://xkcd.com/${ xkcdMessage }/info.0.json`;
+		} else {
+			comicUrl = url;
+		}
+
+		request.post({
+			url: comicUrl
+		}, (err, httpResponse, body) => {
+			let replyBody = JSON.parse(body);
+			let title = replyBody.safe_title;
+			let alt = replyBody.alt;
+			let image = replyBody.img;
+
+			bot.reply(message, {
+				text: `*${ title }*`,
+				username: 'XKCD Bot',
+				icon_emoji: ':computer:'
+			});
+			bot.reply(message, {
+				text: `${ image }\n*${ alt }*`,
+				username: 'XKCD Bot',
+				icon_emoji: ':computer:'
+			});
+		});
+	};
+
+	request.post({
+		url: 'http://xkcd.com/info.0.json'
+	}, (err, httpResponse, body) => {
+		let replyBody = JSON.parse(body);
+		let totalComicCount = String(replyBody.num);
+
+		let randomComicNumber = chance.integer({
+			min: 1,
+			max: Number(totalComicCount)
+		});
+
+		let randomUrl = `http://xkcd.com/${ randomComicNumber }/info.0.json`;
+
+		if (err) {
+			bot.reply(message, {
+				text: 'There appears to be an issue, please try again.',
+				username: 'XKCD Bot',
+				icon_emoji: ':computer:'
+			});
+		} else {
+			sendMessage(randomUrl);
 		}
 	});
 });
@@ -727,6 +643,158 @@ controller.hears(['meme'], messageTypes, (bot, message) => {
 	});
 });
 
+controller.hears(['weather'], messageTypes, (bot, message) => {
+	let weatherMessage = message.text.toLowerCase();
+	weatherMessage = weatherMessage.replace('weather', '').split(',');
+
+	sendEmoji(bot, message, 'cloud');
+
+	if (weatherMessage == undefined || weatherMessage == '' || weatherMessage == ' ') {
+		bot.reply(message, {
+			text: 'You need to supply the CITY, STATE in order to retrieve the weather.',
+			username: 'Weather Bot',
+			icon_emoji: ':cloud:'
+		});
+	} else {
+		let city = weatherMessage[0].trim().replace(' ', '_');
+		let state = weatherMessage[1].trim();
+
+		http.get({
+			host: 'api.wunderground.com',
+			path: `/api/${ weatherToken }/forecast/q/${ state }/${ city }.json`
+		}, response => {
+			let weatherBody = '';
+
+			response.on('data', d => {
+				weatherBody += d;
+			});
+			response.on('end', () => {
+				let weatherData = JSON.parse(weatherBody);
+				let weatherDays = weatherData.forecast.simpleforecast.forecastday;
+
+				for (let i = 0; i < weatherDays.length; i++) {
+					let weatherDay = `*${ weatherDays[i].date.weekday }*`;
+					let weatherHigh = `*High*: ${ weatherDays[i].high.fahrenheit }`;
+					let weatherLow = `*Low*: ${ weatherDays[i].low.fahrenheit }`;
+					let weatherConditions = `*Conditions*: ${ weatherDays[i].conditions }`;
+					let weatherMessage = `${ weatherDay } - ${ weatherHigh } - ${ weatherLow } - ${ weatherConditions }`;
+
+					bot.reply(message, {
+						text: weatherMessage,
+						username: 'Weather Bot',
+						icon_emoji: ':cloud:'
+					});
+				}
+			});
+		});
+	}
+});
+
+controller.hears(['google'], messageTypes, (bot, message) => {
+	let googleMessage = message.text.toLowerCase().replace('google', '');
+	googleMessage = googleMessage.slice(1, googleMessage.length).replace(/ /g, '+');
+
+	sendEmoji(bot, message, 'google');
+
+	bot.reply(message, {
+		text: `https://www.google.com/#q=${ googleMessage }`,
+		username: 'Google Bot',
+		icon_emoji: 'google'
+	});
+});
+
+controller.hears(['yoda'], messageTypes, (bot, message) => {
+	let yodaMessage = message.text.replace('yoda', '');
+	let searchTerm = yodaMessage.slice(1, yodaMessage.length).replace(/ /g, '+');
+
+	if (searchTerm == '' || searchTerm == ' ') {
+		searchTerm = '';
+	}
+
+	unirest.get(`https://yoda.p.mashape.com/yoda?sentence=${ searchTerm }.`).header("X-Mashape-Key", "LtAGmt4o8qmshfSrGpgXTSQMBggIp1Rs9SejsnaZ4AzTxqwarv").header("Accept", "text/plain").end(function (result) {
+		bot.reply(message, `${ result.body }`);
+	});
+
+	sendEmoji(bot, message, 'yoda');
+});
+
+controller.hears(['quotes'], messageTypes, (bot, message) => {
+	let quoteMessage = message.text.replace('quotes', '');
+	let categoryTerm = quoteMessage.slice(1, quoteMessage.length);
+
+	sendEmoji(bot, message, 'grumpycat');
+
+	unirest.post(`https://andruxnet-random-famous-quotes.p.mashape.com/?cat=${ categoryTerm }`).header("X-Mashape-Key", "LtAGmt4o8qmshfSrGpgXTSQMBggIp1Rs9SejsnaZ4AzTxqwarv").header("Content-Type", "application/x-www-form-urlencoded").header("Accept", "application/json").end(function (result) {
+		let messageBody = JSON.parse(result.body);
+		let quote = messageBody.quote;
+		let author = messageBody.author;
+		let fullMessage = `*"${ quote }"*\n\t\t\t- ${ author } -`;
+		bot.reply(message, {
+			text: fullMessage,
+			username: 'Random Quotes Bot',
+			icon_emoji: ':grumpycat:'
+		});
+	});
+});
+
+controller.hears(['status'], messageTypes, (bot, message) => {
+	let statusMessage = message.text.replace('status', '');
+	let statusCode = statusMessage.slice(1, statusMessage.length);
+	let validHTTPCodes = [100, 101, 200, 201, 202, 204, 206, 207, 300, 301, 303, 304, 305, 307, 400, 401, 402, 403, 404, 405, 406, 408, 409, 410, 411, 413, 414, 416, 417, 418, 422, 423, 424, 425, 426, 429, 431, 444, 450, 500, 502, 503, 506, 507, 508, 509, 599];
+	let randomHTTPCode = chance.pick(validHTTPCodes);
+	let doesItMatch;
+
+	sendEmoji(bot, message, 'cat');
+
+	if (statusCode == '' || statusCode == ' ') {
+		statusCode = '404';
+	} else if (statusCode == 'random') {
+		statusCode = randomHTTPCode;
+	} else {
+		for (let code in validHTTPCodes) {
+			if (validHTTPCodes[code] == statusCode) {
+				doesItMatch = true;
+				break;
+			} else {
+				doesItMatch = false;
+			}
+		}
+
+		if (doesItMatch == false) {
+			statusCode = '404';
+		}
+	}
+
+	unirest.get(`https://community-http-status-cats.p.mashape.com/${ statusCode }.jpg`).header("X-Mashape-Key", "LtAGmt4o8qmshfSrGpgXTSQMBggIp1Rs9SejsnaZ4AzTxqwarv").end(function (result) {
+		let mainBody = JSON.stringify(result.request);
+		let parsedBody = JSON.parse(mainBody);
+		bot.reply(message, {
+			text: parsedBody.uri.href,
+			username: 'Status Cat Bot',
+			icon_emoji: ':cat:'
+		});
+	});
+});
+
+controller.hears(['obfuscate'], messageTypes, (bot, message) => {
+	let obfuscateMessage = message.text.replace('obfuscate', '');
+	let obfuscateWord = obfuscateMessage.slice(1, obfuscateMessage.length);
+
+	sendEmoji(bot, message, 'radioactive_sign');
+
+	if (obfuscateWord == '' || obfuscateWord == ' ') {
+		obfuscateWord = 'Hello World';
+	}
+
+	unirest.get(`https://bheithaus-unicode-obfuscator.p.mashape.com/obfuscate?level=3&word=${ obfuscateWord }`).header('X-Mashape-Key', 'N6HhNVEoI1mshNub4YZLeKW1GDx0p1La1nojsnxney54j9lAo2').header('Accept', 'application/json').end(result => {
+		bot.reply(message, {
+			text: result.body.obfuscation,
+			username: 'Obfuscate Bot',
+			icon_emoji: ':radioactive_sign:'
+		});
+	});
+});
+
 controller.hears(['ron', 'ron swanson', 'swanson'], messageTypes, (bot, message) => {
 	sendEmoji(bot, message, 'realdeadpool');
 
@@ -798,15 +866,7 @@ controller.hears(['cat bomb'], messageTypes, (bot, message) => {
 	});
 });
 
-controller.hears('test', messageTypes, (bot, message) => {
-	bot.reply(message, {
-		text: '/msg @margaret_petersen tests',
-		username: 'margaret_petersen',
-		icon_emoji: ':dash:'
-	});
-});
-
-controller.hears('bingo', messageTypes, (bot, message) => {
+controller.hears(['bingo'], messageTypes, (bot, message) => {
 	sendEmoji(bot, message, 'game_die');
 
 	function numberGenerator() {
@@ -895,7 +955,7 @@ controller.hears('bingo', messageTypes, (bot, message) => {
 	cardGenerator(numberGenerator());
 });
 
-controller.hears('number', messageTypes, (bot, message) => {
+controller.hears(['number'], messageTypes, (bot, message) => {
 	let numberMessage = message.text.replace('number', '');
 	numberMessage = numberMessage.slice(1, numberMessage.length);
 
@@ -995,73 +1055,11 @@ controller.hears(['uptime'], messageTypes, (bot, message) => {
 	bot.reply(message, `I am <@${ bot.identity.name }>. I have been running for ${ upTime } on ${ hostname }.`);
 });
 
-controller.hears(['material api'], messageTypes, (bot, message) => {
-	sendEmoji(bot, message, 'material');
-
-	request.get({
-		url: 'https://api.material.com/store/health'
-	}, (err, httpResponse, body) => {
-		let materialStatus = JSON.parse(body);
-
-		if (materialStatus.isHealthy == true) {
-			bot.reply(message, {
-				text: `:heavy_check_mark: Material's *_Production API_* is up and running!!`,
-				username: 'Material API Bot',
-				icon_emoji: ':material:'
-			});
-		} else {
-			bot.reply(message, {
-				text: `:fire: Oh no! Material's *_Production API_* is down currently!!`,
-				username: 'Material API Bot',
-				icon_emoji: ':material:'
-			});
-		}
-	});
-
-	request.get({
-		url: 'https://dev.api.material.com/store/health'
-	}, (err, httpResponse, body) => {
-		let materialStatus = JSON.parse(body);
-
-		if (materialStatus.isHealthy == true) {
-			bot.reply(message, {
-				text: `:heavy_check_mark: Material's *_Development API_* is up and running!!`,
-				username: 'Material API Bot',
-				icon_emoji: ':material:'
-			});
-		} else {
-			bot.reply(message, {
-				text: `:fire: Oh no! Material's *_Development API_* is down currently!!`,
-				username: 'Material API Bot',
-				icon_emoji: ':material:'
-			});
-		}
-	});
-});
-
-controller.hears(['material feed'], messageTypes, (bot, message) => {
-	let feed = require('feed-read');
-
-	sendEmoji(bot, message, 'material');
-
-	feed('http://material.statuspage.io/history.atom', (err, articles) => {
-		if (err) throw err;
-
-		for (let i = 0; i < articles.length; i++) {
-			let articleTitle = articles[i].title;
-			let articleAuthor = articles[i].author;
-			let articleLink = articles[i].link;
-			let articlePublished = articles[i].published;
-			let articleMessage = `*${ articleAuthor } - ${ articlePublished }*\n`;
-			articleMessage += `\t "<${ articleLink }|${ articleTitle }>"\n`;
-
-			bot.reply(message, {
-				text: articleMessage,
-				username: 'Material Feed Bot',
-				icon_emoji: ':material:',
-				unfurl_links: false
-			});
-		}
+controller.hears(['test'], messageTypes, (bot, message) => {
+	bot.reply(message, {
+		text: '/msg @margaret_petersen tests',
+		username: 'margaret_petersen',
+		icon_emoji: ':dash:'
 	});
 });
 
