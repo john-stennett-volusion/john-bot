@@ -216,6 +216,7 @@ controller.hears(['help'], messageTypes, (bot, message) => {
 	helpMessage += `obfuscate TEXT      - Returns your text in Unicode Characters.\n`;
 	helpMessage += `bingo               - Returns a random BINGO card.\n`;
 	helpMessage += `google SEARCH_TERM  - Include a SEARCH_TERM & you'll get a link to Google.\n`;
+	helpMessage += `dat boi             - Returns the Dat Boi gif (Lauren Hill you're welcome!).\n`;
 	helpMessage += `weather CITY, STATE - Include CITY, STATE & you'll get the weather.\n`;
 	helpMessage += `uptime              - Returns the current Up Time for John-Bot.`;
 	helpMessage += `\`\`\``;
@@ -1072,6 +1073,14 @@ controller.hears(['date'], messageTypes, (bot, message) => {
 			icon_emoji: ':science:'
 		});
 	}
+});
+
+controller.hears(['dat boi', 'datboi'], messageTypes, (bot, message) => {
+	bot.reply(message, {
+		text: `http://i.imgur.com/0X2Qfk9.gif`,
+		username: 'Dat Boi Bot',
+		icon_emoji: ':datboi:'
+	});
 });
 
 controller.hears(['uptime'], messageTypes, (bot, message) => {
