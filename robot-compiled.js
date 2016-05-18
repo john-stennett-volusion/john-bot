@@ -188,9 +188,9 @@ function formatUptime(uptime) {
 }
 
 // Give the bot something to listen for.
-controller.hears('help', messageTypes, (bot, message) => {
-	let helpMessage = '';
-	helpMessage += `\`\`\`hello               - Returns "Hello yourself".\n`;
+controller.hears(['help'], messageTypes, (bot, message) => {
+	let helpMessage = '\`\`\`';
+	helpMessage += `hello               - Returns "Hello yourself".\n`;
 	helpMessage += `help                - Returns a list of available commands.\n`;
 	helpMessage += `material api        - Returns the Health of Material's Prod/Dev APIs.\n`;
 	helpMessage += `material feed       - Returns the RSS Feed for Material's Prod/Dev APIs.\n`;
@@ -217,7 +217,8 @@ controller.hears('help', messageTypes, (bot, message) => {
 	helpMessage += `bingo               - Returns a random BINGO card.\n`;
 	helpMessage += `google SEARCH_TERM  - Include a SEARCH_TERM & you'll get a link to Google.\n`;
 	helpMessage += `weather CITY, STATE - Include CITY, STATE & you'll get the weather.\n`;
-	helpMessage += `uptime              - Returns the current Up Time for John-Bot.\`\`\``;
+	helpMessage += `uptime              - Returns the current Up Time for John-Bot.`;
+	helpMessage += `\`\`\``;
 
 	bot.reply(message, {
 		text: helpMessage,
@@ -1057,8 +1058,8 @@ controller.hears(['uptime'], messageTypes, (bot, message) => {
 
 controller.hears(['test'], messageTypes, (bot, message) => {
 	bot.reply(message, {
-		text: '/msg @margaret_petersen tests',
-		username: 'margaret_petersen',
+		text: '/msg @john_stennett testing direct message is possible.',
+		username: 'Test Bot',
 		icon_emoji: ':dash:'
 	});
 });
